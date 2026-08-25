@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洛阳师范学院 综测计算</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, "Microsoft YaHei", sans-serif;
+  background: url('bg.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #6e3b1f;
+  height: 100vh;
+}
+.container {
+  width: 100%; max-width: none; margin: 0; padding: 20px 6vw;
+  display: flex; align-items: flex-start; gap: 22px;
+  position: relative; z-index: 1;
+  height: 100vh;
+}
+
+/* 左侧区域 */
+.col-left {
+  width: 310px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.title-card {
+  padding: 22px 18px; border-radius: 18px;
+  background: linear-gradient(135deg, #f4a963, #e0763a);
+  border: 1px solid rgba(224,118,58,0.4);
+  box-shadow: 0 8px 24px rgba(224, 118, 58, 0.3);
+}
+.title-card .title-main {
+  font-size: 19px; font-weight: 800; color: #fff; line-height: 1.3;
+  display: flex; align-items: center; gap: 8px;
+}
+.title-card .title-main::before{
+  content:''; width:5px; height:22px; border-radius:4px;
+  background: rgba(255,255,255,0.85); display:inline-block; flex-shrink:0;
+}
+.title-card .title-sub {
+  font-size: 12px; color: rgba(255,255,255,0.92); margin-top: 10px; padding-left: 13px;
+  line-height: 1.7;
+}
+
+/* 综测计算规则（与标题齐宽，浅橘黄底色） */
+.rule-card {
+  padding: 12px 18px; border-radius: 18px;
+  background: linear-gradient(135deg, rgba(244,169,99,0.55), rgba(224,118,58,0.4));
+  border: 1px solid rgba(224,118,58,0.3);
+  box-shadow: 0 4px 16px rgba(224, 118, 58, 0.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.25s;
+}
+.rule-card:hover {
+  background: linear-gradient(135deg, rgba(244,169,99,0.7), rgba(224,118,58,0.55));
+  box-shadow: 0 6px 20px rgba(224, 118, 58, 0.28);
+}
+.rule-name { font-size: 16px; font-weight: 700; color: #5e4707; letter-spacing: 1px; }
+.rule-card:hover .rule-name { color: #5c2a10; }
+
+/* 类别+步骤 横排容器 */
+.nav-row {
+  flex: 1; min-height: 0;
+  display: flex; gap: 10px;
+}
+/* 类别卡片（窄） */
+.category-list {
+  width: 80px; flex-shrink: 0; height: 100%;
+  padding: 6px;
+  background: rgba(255, 253, 250, 0.52);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.65);
+  border-radius: 18px;
+  box-shadow: 0 10px 36px rgba(196, 118, 62, 0.16);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.category-item {
+  flex: 1;  /* 三个项目平均分配高度 */
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 6px; border-radius: 12px; cursor: pointer;
+  transition: all 0.25s;
+  background: rgba(255,255,255,0.25);
+  border: 1px solid transparent;
+}
+.category-item:hover:not(.locked) {
+  background: rgba(244, 169, 99, 0.15);
+  border-color: rgba(224,118,58,0.2);
+}
+.category-item:hover:not(.locked) .cat-name { color: #5c3a1e; }
+.category-item.active {
+  background: linear-gradient(135deg, #e0763a, #c45a20);
+  border-color: rgba(196,90,32,0.6);
+  box-shadow: 0 4px 14px rgba(196, 90, 32, 0.35);
+}
+.category-item.locked { opacity: 0.5; cursor: not-allowed; }
+.category-item.locked:hover { background: rgba(255,255,255,0.25); }
+.cat-name { font-size: 14px; font-weight: 600; color: #7a4a28; width: 2em; text-align: center; line-height: 1.5; }
+.category-item.active .cat-name { color: #fff; }
+.category-item.locked .cat-name { color: #a0806a; }
+
+/* 左侧步骤列（类别右侧） */
+.sidebar {
+  flex: 1; min-width: 0; height: 100%;
+  display: flex; flex-direction: column;
+}
+
+/* 步骤导航（纵向卡片，刚好装下四步） */
+.steps { padding: 14px; display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.steps-placeholder {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px; flex-direction: column;
+}
+.steps-placeholder-text {
+  font-size: 15px; font-weight: 600; color: #b07a4f; text-align: center;
+  line-height: 1.6; opacity: 0.7;
+}
+.steps-placeholder-ding {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.ding-img {
+  width: 130px; height: 130px; object-fit: cover; border-radius: 50%;
+  /* 圆形裁剪 + 边缘5px虚化 */
+  -webkit-mask-image: radial-gradient(circle, #000 96%, transparent 100%);
+          mask-image: radial-gradient(circle, #000 96%, transparent 100%);
+  filter: blur(0.3px) drop-shadow(0 4px 14px rgba(196,90,32,0.3));
+}
+.ding-text {
+  font-size: 13px; color: #8a5a36; text-align: center; line-height: 1.7;
+  font-weight: 500;
+}
+.steps-items { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.step-item.usage {
+  background: rgba(244, 169, 99, 0.14); border: 1px dashed rgba(224,118,58,0.4);
+  margin-bottom: 6px;
+}
+.step-item.usage .step-num { background: rgba(224,118,58,0.3); }
+.step-item.usage .step-name { color: #8c4a2b; }
+.step-item.usage .step-hint { color: #b07a4f; }
+.step-item.usage.active {
+  background: linear-gradient(135deg, #e0763a, #c45a20); border-style: solid;
+}
+.step-item.usage.active .step-num { background: #fff; color: #c45a20; }
+.step-item.usage.active .step-name { color: #fff; }
+.step-item.usage.active .step-hint { color: rgba(255,255,255,0.88); }
+.step-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 12px; transition: all 0.25s;
+  cursor: pointer; background: rgba(255,255,255,0.35);
+  border: 1px solid transparent;
+}
+.step-item:hover:not(.locked) {
+  background: rgba(244, 169, 99, 0.18); border-color: rgba(224,118,58,0.25);
+}
+.step-item:hover:not(.locked):not(.active) .step-name { color: #5c3a1e; }
+.step-item.active {
+  background: linear-gradient(135deg, #e0763a, #c45a20);
+  border-color: rgba(196,90,32,0.6);
+  box-shadow: 0 6px 18px rgba(196, 90, 32, 0.4);
+}
+.step-item.done { background: rgba(244, 214, 188, 0.4); }
+.step-item.locked { opacity: 0.45; cursor: not-allowed; }
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; background: rgba(160,110,70,0.35); color: #fff; flex-shrink: 0;
+}
+.step-item.active .step-num { background: #fff; color: #c45a20; box-shadow:0 4px 10px rgba(0,0,0,0.15); }
+.step-item.done .step-num { background: #e8a06b; }
+.step-item.done .step-num::after { content: '✓'; }
+.step-item.done .step-num-text { display: none; }
+.step-text { display: flex; align-items: center; }
+.step-text .step-name { font-size: 13.5px; font-weight: 600; color: #7a4a28; }
+.step-text .step-hint { font-size: 11px; color: #b07a4f; }
+.step-item.active .step-name { color: #fff; }
+.step-item.active .step-hint { color: rgba(255,255,255,0.88); }
+.step-item.done .step-name { color: #a96a3d; }
+
+/* 主内容区 */
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 22px; height: 100%; overflow: hidden; }
+
+/* 毛玻璃卡片 */
+.glass {
+  background: rgba(255, 253, 250, 0.52);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.65);
+  border-radius: 22px;
+  box-shadow: 0 10px 36px rgba(196, 118, 62, 0.16);
+}
+.card { padding: 24px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.card h2 { font-size: 17px; margin-bottom: 14px; color: #8c4a2b; display:flex; align-items:center; gap:8px; flex-shrink: 0; }
+.card h2::before{
+  content:''; width:4px; height:18px; border-radius:4px;
+  background: linear-gradient(180deg,#f4a963,#e0763a); display:inline-block;
+}
+.card-desc { color:#8a5a36; font-size:13px; margin-bottom:12px; flex-shrink: 0; }
+
+/* 上传区 */
+.upload-zone {
+  border: 2px dashed rgba(224, 118, 58, 0.5);
+  border-radius: 16px; padding: 36px; text-align: center; cursor: pointer; transition: all 0.3s;
+  flex-shrink: 0;
+}
+.upload-zone:hover { border-color: #e0763a; background: rgba(244, 169, 99, 0.08); }
+.upload-zone.dragover { border-color: #e0763a; background: rgba(244, 169, 99, 0.15); }
+.upload-icon { font-size: 48px; color: #e8a06b; margin-bottom: 12px; }
+.upload-zone p { color: #8a5a36; font-size: 14px; }
+.upload-zone .filename { font-size: 15px; font-weight: 600; color: #d96a2b; margin-top: 8px; }
+
+/* 文件信息 */
+.file-info { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; }
+.info-item {
+  background: rgba(255, 250, 244, 0.78); border:1px solid rgba(255,255,255,0.6);
+  border-radius: 14px; padding: 14px 18px; flex: 1; min-width: 150px;
+}
+.info-label { font-size: 12px; color: #b07a4f; margin-bottom: 4px; }
+.info-value { font-size: 16px; font-weight: 600; color: #7a4222; }
+
+/* 科目选择 */
+.subject-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;
+  max-height: 40%; flex-shrink: 0; overflow-y: auto; padding: 4px;
+}
+.subject-item {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border: 1px solid rgba(224, 118, 58, 0.25); border-radius: 14px; cursor: pointer; transition: all 0.2s;
+  background: rgba(255,255,255,0.45);
+}
+.subject-item:hover { border-color: #e0763a; background: rgba(244, 169, 99, 0.12); }
+.subject-item.checked { border-color: #e0763a; background: rgba(244, 169, 99, 0.22); }
+.subject-item input { width: 18px; height: 18px; cursor: pointer; accent-color: #e0763a; }
+.subject-name { flex: 1; font-size: 13px; }
+.subject-meta { font-size: 12px; color: #b07a4f; }
+.subject-tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; margin-left: 4px; }
+.tag-must { background: rgba(235,132,90,0.22); color: #c05327; }
+.tag-elective { background: rgba(240,180,120,0.28); color: #a3622f; }
+.tag-limited { background: rgba(205,150,110,0.22); color: #8a5a36; }
+
+.credit-summary {
+  margin-top: 14px; padding: 10px 16px; background: rgba(244, 169, 99, 0.2);
+  backdrop-filter: blur(4px); border-radius: 12px; font-size: 14px; color: #9c5a2d; flex-shrink: 0;
+}
+
+.subject-preview-label {
+  margin-top: 14px; font-size: 13px; font-weight: 600; color: #8a5a36; flex-shrink: 0;
+}
+.subject-preview-wrap {
+  margin-top: 6px; flex: 1; min-height: 0; overflow: auto;
+  border-radius: 12px; border: 1px solid rgba(224,118,58,0.2);
+  background: rgba(255,251,246,0.6);
+}
+.subject-preview-wrap table { min-width: auto; font-size: 12px; }
+.subject-preview-wrap th, .subject-preview-wrap td { padding: 7px 10px; }
+.subject-preview-wrap th { position: sticky; top: 0; }
+
+/* 按钮 */
+.btn {
+  padding: 10px 28px; border: none; border-radius: 14px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; color: #fff;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #f4a963, #e0763a);
+  box-shadow: 0 6px 18px rgba(224, 118, 58, 0.35);
+}
+.btn-primary:hover { background: linear-gradient(135deg, #f09a4e, #d96a2b); transform: translateY(-1px); }
+.btn-primary:disabled { background: rgba(200,170,140,0.6); cursor: not-allowed; box-shadow:none; transform:none; }
+.btn-secondary {
+  background: rgba(255,255,255,0.55); color: #8a5a36;
+  border: 1px solid rgba(224,118,58,0.3);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.8); }
+.btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; flex-shrink: 0; }
+
+/* 面板内可滚动内容容器 */
+#quantPreview, #resultTables { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.file-info { flex-shrink: 0; }
+
+/* ===== 主页 ===== */
+.home-panel {
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.home-content {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  text-align: center; max-width: 560px; width: 100%;
+}
+.home-logo-wrap {
+  width: 70%; aspect-ratio: 1 / 1; max-width: 400px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  /* 周围虚化光晕：橙色软光 */
+  background: radial-gradient(circle, rgba(255,255,255,0.55) 55%, rgba(255,255,255,0) 72%);
+  box-shadow: 0 0 50px 14px rgba(224,118,58,0.32),
+              0 0 100px 50px rgba(244,169,99,0.18);
+  margin-bottom: 8px;
+}
+.home-logo {
+  width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+  /* 整体轻微虚化 + 投影 */
+  filter:  drop-shadow(0 4px 14px rgba(196,90,32,0.35));
+  /* 边缘羽化：从 75% 渐变到 100% 透明 */
+  -webkit-mask-image: radial-gradient(circle, #000 95%, transparent 100%);
+          mask-image: radial-gradient(circle, #000 95%, transparent 100%);
+}
+.home-title {
+  font-size: 32px; font-weight: 800; color: #ffffff; margin: 4px 0 2px;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 10px rgba(92,58,30,0.55), 0 0 18px rgba(224,118,58,0.35);
+}
+.home-author { font-size: 15px; color: #7a4a28; margin: 0; }
+.home-date { font-size: 13px; color: #b07a4f; margin: 0; opacity: 0.85; }
+.home-github { font-size: 13px; color: #b07a4f; margin: 2px 0 0; }
+.home-github-link {
+  color: #b07a4f; text-decoration: none;
+  border-bottom: 1px dashed rgba(176,122,79,0.5); padding-bottom: 1px;
+}
+.home-github-link:hover { color: #e0763a; border-bottom-color: #e0763a; }
+
+/* 日期 + github 同一行 */
+.home-meta-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 4px;
+  font-size: 13px; color: #b07a4f;
+}
+.home-meta-sep { color: rgba(176,122,79,0.5); }
+
+/* 主页底部两栏布局 */
+.home-actions {
+  margin-top: 26px; display: flex; gap: 0; align-items: stretch;
+  width: 100%; max-width: 720px;
+}
+.home-action-left, .home-action-right {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 18px 14px;
+}
+.home-action-left { flex: 1; }
+.home-action-right { flex: 3; }
+.home-action-divider {
+  width: 1px; background: rgba(224,118,58,0.25); margin: 8px 0;
+}
+.home-action-img {
+  width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+  box-shadow: 0 4px 14px rgba(196,90,32,0.25);
+}
+.home-action-text {
+  font-size: 14px; color: #5c3a1e; font-weight: 600; text-align: center;
+}
+.home-action-btn {
+  padding: 8px 20px; font-size: 13px;
+}
+.home-cat-row { display: flex; gap: 12px; }
+.home-cat-btn {
+  padding: 8px 18px; border-radius: 14px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.25s; border: 1px solid rgba(224,118,58,0.3);
+  background: rgba(255,255,255,0.45); color: #7a4a28;
+}
+.home-cat-btn:hover {
+  background: rgba(244,169,99,0.25); border-color: rgba(224,118,58,0.5); color: #5c3a1e;
+}
+.home-cat-btn.active {
+  background: linear-gradient(135deg, #e0763a, #c45a20); color: #fff;
+  border-color: rgba(196,90,32,0.6); box-shadow: 0 4px 14px rgba(196,90,32,0.35);
+}
+
+/* 班级名输入框 */
+.class-name-box {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: rgba(255,255,255,0.45); border: 1px solid rgba(224,118,58,0.25);
+  border-radius: 14px; padding: 12px 16px; margin-bottom: 14px; flex-shrink: 0;
+}
+
+/* 学年综测：双文件上传 */
+.year-upload-row {
+  display: flex; gap: 16px; flex-shrink: 0;
+}
+.year-upload-slot {
+  flex: 1; border: 2px dashed rgba(224,118,58,0.5); border-radius: 16px;
+  padding: 28px; text-align: center; cursor: pointer; transition: all 0.3s;
+  background: rgba(255,255,255,0.35);
+}
+.year-upload-slot:hover { border-color: #e0763a; background: rgba(244,169,99,0.08); }
+
+/* 学年综测：结果表格可内部滚动 */
+.year-result-scroll {
+  flex: 1; min-height: 0; overflow: auto; border-radius: 16px;
+}
+
+/* ==================== 综测计算规则面板 ==================== */
+.rule-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px;
+}
+.rule-intro {
+  font-size: 14px; color: #5c3a1e; line-height: 1.8; margin-bottom: 16px;
+  padding: 12px 16px; background: rgba(244,169,99,0.12); border-radius: 12px;
+}
+.rule-section { margin-bottom: 18px; }
+.rule-h3 {
+  font-size: 15px; font-weight: 700; color: #8c4a2b; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.rule-h3::before {
+  content: ''; width: 4px; height: 18px; border-radius: 3px;
+  background: linear-gradient(180deg, #f4a963, #e0763a);
+}
+.rule-block p { font-size: 13px; color: #5c3a1e; line-height: 1.8; margin: 4px 0; }
+.rule-block code {
+  background: rgba(224,118,58,0.12); padding: 1px 6px; border-radius: 4px;
+  font-family: Consolas, monospace; font-size: 12px; color: #c45a20;
+}
+.rule-formula-box {
+  margin: 10px 0; padding: 14px 18px; background: rgba(255,251,246,0.7);
+  border: 1px solid rgba(224,118,58,0.2); border-radius: 12px;
+}
+.rule-formula {
+  font-family: Consolas, 'Courier New', monospace; font-size: 13px;
+  font-weight: 600; color: #5c2a10; line-height: 2;
+}
+.rule-note {
+  font-size: 12px; color: #8a5a36; margin-top: 4px; line-height: 1.7;
+}
+
+/* ==================== 个人计算面板 ==================== */
+.personal-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px;
+}
+.personal-section {
+  margin-bottom: 18px; padding: 16px 18px;
+  background: rgba(255,251,246,0.5); border-radius: 14px;
+  border: 1px solid rgba(224,118,58,0.15);
+}
+.personal-h3 {
+  font-size: 14px; font-weight: 700; color: #8c4a2b; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.personal-h3::before {
+  content: ''; width: 4px; height: 16px; border-radius: 3px;
+  background: linear-gradient(180deg, #f4a963, #e0763a);
+}
+.personal-subjects { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.personal-subject-row {
+  display: flex; gap: 10px; align-items: center;
+}
+.personal-subject-row input {
+  padding: 8px 12px; border: 1px solid rgba(224,118,58,0.3);
+  border-radius: 10px; font-size: 13px; background: rgba(255,255,255,0.6);
+}
+.personal-subject-row input[type="text"] { flex: 1; }
+.personal-subject-row input[type="number"] { width: 80px; }
+.personal-subject-row .del-btn {
+  width: 32px; height: 32px; border: none; border-radius: 8px;
+  background: rgba(235,132,90,0.15); color: #c05327; font-size: 18px;
+  cursor: pointer; flex-shrink: 0;
+}
+.personal-subject-row .del-btn:hover { background: rgba(235,132,90,0.3); }
+.personal-add-btn { padding: 8px 16px; font-size: 13px; }
+.personal-quant-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.personal-label {
+  font-size: 13px; color: #5c3a1e; font-weight: 600; flex-shrink: 0; width: 180px;
+}
+.personal-input {
+  padding: 8px 12px; border: 1px solid rgba(224,118,58,0.3);
+  border-radius: 10px; font-size: 13px; background: rgba(255,255,255,0.6);
+  width: 120px;
+}
+.personal-result {
+  padding: 16px 18px; border-radius: 14px; display: none;
+  background: rgba(244,169,99,0.15); border: 1px solid rgba(224,118,58,0.25);
+}
+.personal-result.show { display: block; }
+.personal-result-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid rgba(224,118,58,0.12);
+}
+.personal-result-row:last-child { border-bottom: none; }
+.personal-result-label { font-size: 13px; color: #5c3a1e; }
+.personal-result-value {
+  font-size: 18px; font-weight: 700; color: #c45a20;
+  font-family: Consolas, monospace;
+}
+
+/* 学年综测：挂科清单 */
+.failed-list {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 4px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+/* 挂科分组卡片 */
+.failed-group {
+  border: 1px solid rgba(224,118,58,0.2); border-radius: 14px; overflow: hidden;
+  background: rgba(255,255,255,0.3); flex-shrink: 0;
+}
+.failed-group-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; background: rgba(244,169,99,0.18);
+  border-bottom: 1px solid rgba(224,118,58,0.15);
+}
+.failed-group-name { font-size: 14px; font-weight: 700; color: #5c3a1e; }
+.failed-group-id { font-size: 12px; color: #8a5a36; }
+.failed-group-count {
+  margin-left: auto; font-size: 11px; font-weight: 600;
+  color: #c05327; background: rgba(235,132,90,0.15); padding: 2px 8px; border-radius: 6px;
+}
+.failed-group-body {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 6px;
+}
+/* 网格内的科目项：横向排列 学期+科目+分数 */
+.failed-group-body .failed-item {
+  display: flex; flex-direction: row; align-items: center; gap: 6px;
+  padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,0.35); border: 1px solid rgba(224,118,58,0.15);
+  transition: all 0.2s; min-height: 36px;
+}
+.failed-group-body .failed-item:hover { background: rgba(244,169,99,0.15); }
+.failed-group-body .failed-item.checked {
+  background: rgba(255,235,59,0.25); border-color: rgba(255,193,7,0.5);
+}
+.failed-group-body .failed-item input { width: 14px; height: 14px; accent-color: #e0763a; flex-shrink: 0; }
+.failed-group-body .failed-item .sem-tag {
+  font-size: 10px; padding: 1px 5px; border-radius: 4px;
+  background: rgba(224,118,58,0.2); color: #8c4a2b; flex-shrink: 0;
+}
+.failed-group-body .failed-item .course-info {
+  font-size: 12px; line-height: 1.2; color: #5c3a1e; flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.failed-group-body .failed-item .score-info {
+  font-size: 12px; color: #c05327; font-weight: 600; flex-shrink: 0;
+}
+.class-name-label { font-weight: 700; color: #7a4222; font-size: 14px; white-space: nowrap; }
+.class-name-input {
+  flex: 1; min-width: 200px; padding: 8px 14px; font-size: 14px;
+  border: 1px solid rgba(224,118,58,0.35); border-radius: 10px;
+  background: rgba(255,255,255,0.7); color: #5c3a1e; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Microsoft YaHei', sans-serif;
+}
+.class-name-input:focus {
+  border-color: #e0763a; box-shadow: 0 0 0 3px rgba(224,118,58,0.15);
+}
+.class-name-input::placeholder { color: #c4a085; }
+.class-name-hint { color: #b07a4f; font-size: 12px; flex-basis: 100%; }
+
+/* 使用说明面板 */
+.usage-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 6px; }
+.usage-intro {
+  background: rgba(244, 169, 99, 0.16); border: 1px solid rgba(224,118,58,0.25);
+  border-radius: 14px; padding: 14px 18px; color: #8a5a36; font-size: 13.5px;
+  line-height: 1.7; margin-bottom: 18px; flex-shrink: 0;
+}
+.usage-step {
+  background: rgba(255,255,255,0.55); border: 1px solid rgba(224,118,58,0.2);
+  border-radius: 16px; padding: 18px 20px; margin-bottom: 16px;
+}
+.usage-step .step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.usage-step .step-badge {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #f4a963, #e0763a); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  box-shadow: 0 3px 8px rgba(224,118,58,0.3);
+}
+.usage-step .step-title { font-size: 15px; font-weight: 700; color: #7a4222; }
+.usage-step .step-body { color: #6e4426; font-size: 13.5px; line-height: 1.75; padding-left: 42px; }
+.usage-step .step-body p { margin-bottom: 8px; }
+.usage-step .step-body .note {
+  display: inline-block; background: rgba(235,132,90,0.15); color: #c05327;
+  padding: 2px 10px; border-radius: 6px; font-size: 12px; margin-left: 4px;
+}
+.usage-img-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.usage-img-group img {
+  max-width: 100%; height: auto; border-radius: 10px;
+  border: 1px solid rgba(224,118,58,0.3); box-shadow: 0 4px 14px rgba(196,118,62,0.18);
+}
+.usage-img-group .img-single { flex: 1 1 320px; min-width: 0; }
+.usage-img-group .img-single img { width: 100%; }
+.usage-img-group .img-half { flex: 1 1 200px; min-width: 0; max-width: 48%; }
+.usage-img-group .img-half img { width: 100%; }
+
+/* 表格预览 */
+.table-tabs {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; flex-shrink: 0;
+}
+.tab-btn {
+  padding: 9px 22px; border: 1px solid rgba(224,118,58,0.25); border-radius: 999px;
+  background: rgba(255,255,255,0.5); font-size: 13px; font-weight: 600; color: #8a5a36;
+  cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active {
+  color: #fff; background: linear-gradient(135deg, #f4a963, #e0763a); border-color: transparent;
+  box-shadow: 0 4px 14px rgba(224,118,58,0.3);
+}
+.tab-btn:hover:not(.active) { background: rgba(244,169,99,0.18); }
+
+/* 表格：更高不透明度 + 圆角，填满剩余空间内部滚动 */
+.table-wrap {
+  overflow: auto; flex: 1; min-height: 0; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.7);
+  background: rgba(255, 251, 246, 0.82);
+  backdrop-filter: blur(8px);
+}
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12.5px; min-width: 640px; }
+th, td { padding: 9px 12px; text-align: center; white-space: nowrap; border-bottom: 1px solid rgba(226,190,160,0.5); }
+th {
+  background: linear-gradient(180deg, #f6ab6b, #e8833f);
+  color: #fff; font-weight: 700; position: sticky; top: 0; z-index: 2;
+  text-shadow: 0 1px 2px rgba(160,80,30,0.4);
+}
+tbody tr:nth-child(even) { background: rgba(248, 226, 205, 0.35); }
+tbody tr:nth-child(odd) { background: rgba(255, 253, 250, 0.25); }
+tbody tr:hover { background: rgba(244, 169, 99, 0.25); }
+td.num { font-family: Consolas, monospace; }
+
+/* 加载/消息 */
+.loading { text-align: center; padding: 40px; color: #a96a3d; font-size: 14px; }
+.loading .spinner {
+  display: inline-block; width: 34px; height: 34px;
+  border: 3px solid rgba(224,118,58,0.2); border-top-color: #e0763a;
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+.error-msg { background: rgba(235,132,90,0.18); color: #c05327; padding: 12px 16px; border-radius: 12px; font-size: 13px; margin-top: 12px; }
+.success-msg { background: rgba(244,169,99,0.22); color: #9c5a2d; padding: 12px 16px; border-radius: 12px; font-size: 13px; margin-top: 12px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(224,118,58,0.4); border-radius: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.25); }
+
+/* 响应式：窄屏堆叠 */
+@media (max-width: 860px) {
+  html, body { overflow: auto; }
+  .container { flex-direction: column; height: auto; padding: 16px; }
+  .col-left { width: 100%; }
+  .nav-row { flex-direction: column; }
+  .category-list { width: 100%; flex-direction: row; flex-wrap: wrap; }
+  .category-item { flex: 1; min-width: 100px; }
+  .sidebar { width: 100%; }
+  .steps { flex: 1; flex-direction: row; overflow-x: auto; }
+  .step-item { min-width: 140px; }
+  .main { height: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 左侧区域 -->
+  <aside class="col-left">
+    <div class="title-card" onclick="goHome()" style="cursor:pointer" title="返回主页">
+      <div class="title-main">洛阳师范学院 综测计算</div>
+      <div class="title-sub">作者：2024级软件工程十班 李祎杭<br>2026.8 VibeCoding</div>
+    </div>
+    <div class="rule-card" id="catRule" onclick="switchCategory('rule')">
+      <span class="rule-name">综测计算规则</span>
+    </div>
+    <div class="nav-row">
+      <div class="category-list">
+        <div class="category-item active" id="catSemester" onclick="switchCategory('semester')">
+          <span class="cat-name">学期综测</span>
+        </div>
+        <div class="category-item" id="catYear" onclick="switchCategory('year')">
+          <span class="cat-name">学年综测</span>
+        </div>
+        <div class="category-item" id="catPersonal" onclick="switchCategory('personal')">
+          <span class="cat-name">个人计算</span>
+        </div>
+      </div>
+      <aside class="sidebar">
+        <nav class="steps glass" id="steps">
+      <!-- 占位卡片：未选择类别时显示"请选择类别模式"，个人计算时显示 ding.jpg -->
+      <div class="steps-placeholder" id="stepsPlaceholder">
+        <div class="steps-placeholder-text" id="placeholderText">请选择类别模式</div>
+        <div class="steps-placeholder-ding" id="placeholderDing" style="display:none;">
+          <img src="ding.jpg" alt="ding" class="ding-img">
+          <div class="ding-text">看我干嘛？<br>这个没有步骤<br>都在右边👉</div>
+        </div>
+      </div>
+      <div class="steps-items" id="stepsItems" style="display:none;">
+      <div class="step-item usage active" id="nav0" onclick="goStep(0)">
+        <div class="step-num">i</div>
+        <div class="step-text"><span class="step-name">使用说明</span></div>
+      </div>
+      <hr>
+      <div class="step-item locked" id="nav1" onclick="goStep(1)" data-sem="上传文件" data-year="上传学期综测" data-personal="上传文件">
+        <div class="step-num"><span class="step-num-text">1</span></div>
+        <div class="step-text"><span class="step-name">上传文件</span></div>
+      </div>
+      <div class="step-item locked" id="nav2" onclick="goStep(2)" data-sem="选择参评科目" data-year="补考及格标记" data-personal="选择参评科目">
+        <div class="step-num"><span class="step-num-text">2</span></div>
+        <div class="step-text"><span class="step-name">选择参评科目</span></div>
+      </div>
+      <div class="step-item locked" id="nav3" onclick="goStep(3)" data-sem="量化预览" data-year="计算结果" data-personal="量化预览">
+        <div class="step-num"><span class="step-num-text">3</span></div>
+        <div class="step-text"><span class="step-name">量化预览</span></div>
+      </div>
+      <div class="step-item locked" id="nav4" onclick="goStep(4)" data-sem="计算结果" data-year="" data-personal="计算结果">
+        <div class="step-num"><span class="step-num-text">4</span></div>
+        <div class="step-text"><span class="step-name">计算结果</span></div>
+      </div>
+      </div>
+    </nav>
+    </aside>
+    </div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <main class="main">
+    <!-- 主页 -->
+    <div class="card glass home-panel" id="panelHome">
+      <div class="home-content">
+        <div class="home-logo-wrap">
+          <img src="logo.png" alt="logo" class="home-logo">
+        </div>
+        <h1 class="home-title">洛阳师范学院综测计算工具</h1>
+        <p class="home-author">作者：2024级软件学院软件工程十班学委 李祎杭</p>
+        <div class="home-meta-row">
+          <span class="home-date">2026.8 VibeCoding</span>
+          <span class="home-meta-sep">·</span>
+          <a href="https://github.com/Voider-Li/LYNU-ZongCe-Calculator" target="_blank" class="home-github-link">GitHub 仓库地址</a>
+        </div>
+        <div class="home-actions">
+          <!-- 左侧：计算细则 -->
+          <div class="home-action-left">
+            <img src="kb.jpg" alt="规则" class="home-action-img">
+            <div class="home-action-text" ">如果你还不知道综测是<br>如何计算的👇</div>
+            <button class="btn btn-primary home-action-btn" style="width: 180px;" onclick="switchCategory('rule')">计算流程细则 >></button>
+          </div>
+          <!-- 竖线分隔 -->
+          <div class="home-action-divider"></div>
+          <!-- 右侧：开始计算 -->
+          <div class="home-action-right">
+            <img src="sk.jpg" alt="开始" class="home-action-img">
+            <div class="home-action-text">开始计算👇</div>
+            <div class="home-cat-row">
+              <button class="home-cat-btn" onclick="switchCategory('semester')">学期综测</button>
+              <button class="home-cat-btn" onclick="switchCategory('year')">学年综测</button>
+              <button class="home-cat-btn" onclick="switchCategory('personal')">个人计算</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card glass hidden" id="panel0">
+      <h2>使用说明</h2>
+      <!-- 学期综测说明 -->
+      <div class="usage-scroll" id="usageSemester">
+        <div class="usage-intro">
+          计算前请先准备一个 <b>.xlsx</b> 表格，包含两个 sheet：<b>【原始】</b> 和 <b>【量化】</b>。
+          按下方说明整理好后，点击左侧「1. 上传文件」开始计算。
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">1</div>
+            <div class="step-title">准备两个 sheet</div>
+          </div>
+          <div class="step-body">
+            <p>新建一个 xlsx，里面放两个 sheet，分别命名为「原始」和「量化」。</p>
+            <div class="usage-img-group">
+              <div class="img-single"><img src="usage_img/1.png" alt="sheet示例" style="width:60%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">2</div>
+            <div class="step-title">【原始】表：直接粘贴成绩</div>
+          </div>
+          <div class="step-body">
+            <p>把教务系统导出的原始成绩直接复制粘贴进来，<b>不用修改格式</b>。</p>
+            <p><span class="note">注意</span>不需要标题，直接从科目那一行开始，到最后一个人结束（带上平均成绩那一行也可以）。</p>
+            <div class="usage-img-group">
+              <div class="img-single"><img src="usage_img/2.1.png" alt="原始表示例1"></div>
+              <div class="img-half"><img src="usage_img/2.2.png" alt="原始表示例2"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">3</div>
+            <div class="step-title">【量化】表：整理扣分</div>
+          </div>
+          <div class="step-body">
+            <p>整理成下图格式即可。其中「基础管理量化」一栏填写<b>扣分</b>，小空格位置是日期，形如 <code>-2</code>。</p>
+            <div class="usage-img-group">
+              <div class="img-single"><img src="usage_img/3.png" alt="量化表示例" style="width:60%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">4</div>
+            <div class="step-title">上传表格</div>
+          </div>
+          <div class="step-body">
+            <p>表格整理好后，点击左侧「1. 上传文件」，选择该 xlsx 即可自动解析。</p>
+            <p>之后按步骤：选择参评科目 → 量化预览 → 开始计算 → 导出 Excel。</p>
+          </div>
+        </div>
+      </div>
+      <!-- 学年综测说明 -->
+      <div class="usage-scroll" id="usageYear" style="display:none;">
+        <div class="usage-intro">
+          学年综测基于<b>两个学期的综测结果文件</b>进行计算。请先分别完成第一学期和第二学期的综测计算并导出结果文件，再在此处上传。
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">1</div>
+            <div class="step-title">准备两份学期综测结果</div>
+          </div>
+          <div class="step-body">
+            <p>先用「学期综测」模式分别计算第一学期和第二学期，导出两个 <b>.xlsx</b> 结果文件。</p>
+            <p><span class="note">注意</span>学年综测直接使用学期综测中已选好的参评科目和成绩，无需重新选择。</p>
+            <button class="btn btn-primary" style="margin-top:10px; padding:8px 20px; font-size:13px;" onclick="switchCategory('semester')">前往学期综测 →</button>
+          </div>
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">2</div>
+            <div class="step-title">上传两份文件</div>
+          </div>
+          <div class="step-body">
+            <p>点击「1. 上传学期综测」，分别上传第一学期和第二学期的综测结果文件。</p>
+            <p>程序会自动解析两份文件中的参评科目、成绩和量化数据，并<b>自动识别挂科科目</b>（成绩 &lt; 60 分）。</p>
+            <p><span class="note">注意</span>未选的课程（如英语生→日语列空白）不会被误判为挂科。</p>
+          </div>
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">3</div>
+            <div class="step-title">标记补考及格</div>
+          </div>
+          <div class="step-body">
+            <p>系统会列出所有挂科的学生和科目。请勾选<b>补考通过</b>的科目，勾选后该科绩点将记为 <b>1</b>（而非 0）。</p>
+            <p>挂科清单按学生分组，每人下方显示其挂科科目，点击即可勾选。</p>
+            <p><span class="note">规则</span>补考及格的科目绩点 = 1，未补考/补考未通过的科目绩点 = 0。</p>
+          </div>
+        </div>
+
+        <div class="usage-step">
+          <div class="step-head">
+            <div class="step-badge">4</div>
+            <div class="step-title">计算与导出</div>
+          </div>
+          <div class="step-body">
+            <p>勾选完成后点击「开始计算」，程序会合并两学期的成绩和量化数据，计算：</p>
+            <p>· <b>学年综测平均学分绩点</b> = (第一学期总绩点 + 第二学期总绩点 + 量化绩点) / 两学期总学分（含量化）</p>
+            <p>· <b>学年学习平均学分绩点</b> = (第一学期科目绩点 + 第二学期科目绩点) / 两学期科目总学分</p>
+            <p>计算完成后点击「导出 Excel」即可下载学年综测结果表格，补考及格的绩点单元格会以<b>黄色填充</b>标记。</p>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="advanceTo(1)">我已了解，开始上传</button>
+      </div>
+    </div>
+
+    <div class="card glass hidden" id="panel1">
+      <h2>上传成绩文件</h2>
+      <div class="class-name-box">
+        <label class="class-name-label" for="classNameInput">班级名设置</label>
+        <input type="text" id="classNameInput" class="class-name-input"
+               placeholder="例如：2024级软件工程十班"
+               oninput="state.className=this.value">
+        <span class="class-name-hint">将作为导出表格标题前缀，如【班级名】量化处理表</span>
+      </div>
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">+</div>
+        <p>点击或拖拽 xlsx 文件到此处</p>
+        <p class="filename" id="fileName"></p>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
+      <div id="fileInfo" class="file-info hidden"></div>
+      <div id="err1"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnNext1" onclick="advanceTo(2)" disabled>下一步</button>
+      </div>
+    </div>
+
+    <div class="card glass hidden" id="panel2">
+      <h2>选择参评科目</h2>
+      <p class="card-desc">勾选需要参与综测计算的科目。已有参评科目表的已默认勾选。</p>
+      <div class="subject-list" id="subjectList"></div>
+      <div class="credit-summary" id="creditSummary"></div>
+      <div class="subject-preview-label">参评科目预览</div>
+      <div id="subjectPreview" class="subject-preview-wrap">
+        <div class="empty-hint" style="text-align:center; padding:24px; color:#b07a4f; font-size:13px;">请勾选参评科目</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">上一步</button>
+        <button class="btn btn-primary" id="btnNext2" onclick="advanceTo(3)">下一步</button>
+      </div>
+    </div>
+
+    <div class="card glass hidden" id="panel3">
+      <h2>量化数据预览</h2>
+      <div id="quantPreview"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2)">上一步</button>
+        <button class="btn btn-primary" id="btnCalc" onclick="doCalc()">开始计算</button>
+      </div>
+    </div>
+
+    <div class="card glass hidden" id="panel4">
+      <h2>计算结果</h2>
+      <div class="table-tabs">
+        <button class="tab-btn active" onclick="switchTab('study',this)">成绩处理</button>
+        <button class="tab-btn" onclick="switchTab('quant',this)">量化处理</button>
+        <button class="tab-btn" onclick="switchTab('composite',this)">综测成绩</button>
+      </div>
+      <div id="resultTables"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(3)">上一步</button>
+        <button class="btn btn-primary" id="btnExport" onclick="doExport()">导出 Excel</button>
+      </div>
+      <div id="exportMsg"></div>
+      <div style="text-align:left; font-size:13px; color:#b5410b; font-weight:600; margin-top:6px;">
+        ⚠ 建议最后一定一定要进行人工核对！
+      </div>
+    </div>
+
+    <!-- ==================== 学年综测面板 ==================== -->
+    <!-- 学年综测 Step1: 上传两学期文件 -->
+    <div class="card glass hidden" id="panelYear1">
+      <h2>上传学期综测文件</h2>
+      <p class="card-desc">请上传两个学期的综测结果文件（学期综测导出的 xlsx），第一学期 + 第二学期。</p>
+      <div class="class-name-box">
+        <label class="class-name-label" for="classNameInputYear">班级名设置</label>
+        <input type="text" id="classNameInputYear" class="class-name-input"
+               placeholder="例如：2024级软件工程十班"
+               oninput="state.yearClassName=this.value">
+        <span class="class-name-hint">将作为导出表格标题前缀</span>
+      </div>
+      <div class="year-upload-row">
+        <div class="year-upload-slot" id="yearSlot1" onclick="document.getElementById('yearFile1').click()">
+          <div class="upload-icon">+</div>
+          <p>第一学期综测</p>
+          <p class="filename" id="yearFileName1"></p>
+        </div>
+        <div class="year-upload-slot" id="yearSlot2" onclick="document.getElementById('yearFile2').click()">
+          <div class="upload-icon">+</div>
+          <p>第二学期综测</p>
+          <p class="filename" id="yearFileName2"></p>
+        </div>
+      </div>
+      <input type="file" id="yearFile1" accept=".xlsx,.xls" style="display:none" onchange="onYearFilePick(1,this)">
+      <input type="file" id="yearFile2" accept=".xlsx,.xls" style="display:none" onchange="onYearFilePick(2,this)">
+      <div id="yearInfo"></div>
+      <div id="yearErr1"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnYearNext1" onclick="doYearUpload()" disabled>解析并查找挂科</button>
+      </div>
+    </div>
+
+    <!-- 学年综测 Step2: 补考勾选 -->
+    <div class="card glass hidden" id="panelYear2">
+      <h2>补考及格标记</h2>
+      <p class="card-desc">以下是所有挂科科目（成绩 &lt; 60）。请勾选<b>补考通过</b>的科目，勾选后该科绩点将记为 1。</p>
+      <div id="failedList" class="failed-list"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">上一步</button>
+        <button class="btn btn-primary" id="btnYearCalc" onclick="doYearCalc()">开始计算</button>
+      </div>
+    </div>
+
+    <!-- 学年综测 Step3: 结果 -->
+    <div class="card glass hidden" id="panelYear3">
+      <h2>学年综测结果</h2>
+      <div id="yearResultTables" class="year-result-scroll"></div>
+      <div class="btn-row" style="flex-shrink:0;">
+        <button class="btn btn-secondary" onclick="goStep(2)">上一步</button>
+        <button class="btn btn-primary" id="btnYearExport" onclick="doYearExport()">导出 Excel</button>
+      </div>
+      <div id="yearExportMsg" style="flex-shrink:0;"></div>
+      <div style="text-align:left; font-size:13px; color:#b5410b; font-weight:600; margin-top:6px; flex-shrink:0;">
+        ⚠ 建议最后一定一定要进行人工核对！
+      </div>
+    </div>
+
+    <!-- ==================== 综测计算规则面板 ==================== -->
+    <div class="card glass hidden" id="panelRule">
+      <h2>综测计算规则</h2>
+      <div class="rule-scroll">
+        <div class="rule-intro">
+          综测成绩由<b>学习成绩</b>和<b>量化成绩</b>两部分按学分加权计算，最终得到平均学分绩点（含量化）作为综测排名依据。
+        </div>
+
+        <div class="rule-section">
+          <h3 class="rule-h3">一、量化成绩</h3>
+          <div class="rule-block">
+            <p>量化成绩由两部分组成：</p>
+            <p>· <b>二课量化</b>（第二课堂加分），原始分值直接填入</p>
+            <p>· <b>基础管理量化</b>（按月扣分），每月填写扣分值（如 <code>-2</code>）</p>
+          </div>
+          <div class="rule-formula-box">
+            <div class="rule-formula">基础管理量化 = 100 − 各月扣分</div>
+            <div class="rule-formula">量化成绩 = (二课量化 + 基础管理量化) ÷ 2</div>
+            <div class="rule-note"><strong>最终参评量化100分封顶</strong></div>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <h3 class="rule-h3">二、单科绩点</h3>
+          <div class="rule-block">
+            <p>每门参评科目的绩点按以下公式计算：</p>
+          </div>
+          <div class="rule-formula-box">
+            <div class="rule-formula">单科绩点 = IF(成绩 &lt; 60, 0, (成绩 − 50) ÷ 10 × 学分)</div>
+            <div class="rule-note">· 成绩 ≥ 60：绩点 = (成绩−50)/10 × 学分，如 85分3学分 → (85−50)/10×3 = 10.5</div>
+            <div class="rule-note">· 成绩 &lt; 60：绩点 = 0（挂科）</div>
+            <div class="rule-note">· 补考及格：绩点 = 1</div>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <h3 class="rule-h3">三、量化绩点</h3>
+          <div class="rule-block">
+            <p>量化成绩作为一门 <b>3 学分</b>的"科目"参与绩点计算：</p>
+          </div>
+          <div class="rule-formula-box">
+            <div class="rule-formula">量化绩点 = IF(量化最终分 &lt; 60, 0, (量化最终分 − 50) ÷ 10 × 3)</div>
+            <div class="rule-note">· 最终参评量化 ≥ 60：绩点 = (成绩−50)/10 × 3</div>
+            <div class="rule-note">· 最终参评量化 &lt; 60：绩点 = 0（挂科）</div>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <h3 class="rule-h3">四、平均学分绩点</h3>
+          <div class="rule-block">
+            <p>将所有参评科目绩点求和，除以总学分，得到两个指标：</p>
+          </div>
+          <div class="rule-formula-box">
+            <div class="rule-formula">平均学分绩点(不含量化) = Σ单科绩点 ÷ 科目总学分</div>
+            <div class="rule-formula">平均学分绩点(含量化) = Σ(单科绩点 + 量化绩点) ÷ (科目总学分 + 3)</div>
+          </div>
+          <div class="rule-block">
+            <p><b>含量化的平均学分绩点即为综测成绩</b>，用于综测排名。</p>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <h3 class="rule-h3">五、排名与百分比</h3>
+          <div class="rule-block">
+            <p>· <b>综测排名</b>：按平均学分绩点(含量化)降序排名</p>
+            <p>· <b>学习排名</b>：按平均学分绩点(不含量化)降序排名</p>
+            <p>· <b>量化排名</b>：按量化最终分降序排名</p>
+            <p>· <b>百分比</b> = 排名 ÷ 总人数</p>
+          </div>
+        </div>
+
+        <div class="rule-section">
+          <h3 class="rule-h3">六、学年综测</h3>
+          <div class="rule-block">
+            <p>学年综测合并两个学期的数据：</p>
+            <p>· 学年综测平均学分绩点 = (S1总绩点 + S2总绩点 + 两学期量化绩点) ÷ (S1总学分 + S2总学分 + 6)</p>
+            <p>· 学年学习平均学分绩点 = (S1科目绩点 + S2科目绩点) ÷ (S1科目总学分 + S2科目总学分)</p>
+            <p>· <b>补考及格</b>的科目绩点记为 1，未补考/未通过记为 0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 个人计算面板 ==================== -->
+    <div class="card glass hidden" id="panelPersonal">
+      <h2>个人综测计算</h2>
+      <p class="card-desc">输入你的成绩和量化数据，快速估算个人综测成绩。无需上传文件，手动输入即可。</p>
+      <div class="personal-scroll">
+        <div class="personal-section">
+          <h3 class="personal-h3">科目成绩</h3>
+          <div id="personalSubjects" class="personal-subjects"></div>
+          <button class="btn btn-secondary personal-add-btn" onclick="addPersonalSubject()">+ 添加科目</button>
+        </div>
+        <div class="personal-section">
+          <h3 class="personal-h3">量化数据</h3>
+          <div class="personal-quant-row">
+            <label class="personal-label">二课量化原始分</label>
+            <input type="number" id="personalScRaw" class="personal-input" value="0" step="0.1">
+          </div>
+          <div class="personal-quant-row">
+            <label class="personal-label">基础管理量化（扣分后）</label>
+            <input type="number" id="personalBaseMgmt" class="personal-input" value="100" step="0.1">
+          </div>
+        </div>
+        <div class="personal-section">
+          <button class="btn btn-primary" onclick="calcPersonal()">计算综测成绩</button>
+        </div>
+        <div id="personalResult" class="personal-result"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let state = {
+  filepath: '', filename: '', className: '', allSubjects: [], evalSubjectNames: [],
+  hasQuantSheet: false, months: [], resultData: null, maxStep: 1,
+  category: null,  // 当前类别：null(未选) / semester / year / personal
+};
+// 初始化：默认显示「主页」面板
+showPanel('home');
+
+// 心跳：持续通知服务器页面仍打开（浏览器关闭后服务器自动退出）
+setInterval(() => { fetch('/api/ping').catch(() => {}); }, 3000);
+
+/* 类别切换：学期综测 / 学年综测 / 个人计算 */
+function switchCategory(cat) {
+  state.category = cat;
+  // 高亮当前类别
+  document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+  const catEl = document.getElementById('cat' + cat.charAt(0).toUpperCase() + cat.slice(1));
+  if (catEl) catEl.classList.add('active');
+  // 显示步骤小卡片，隐藏占位（rule/personal 显示占位，不显示步骤卡）
+  const placeholder = document.getElementById('stepsPlaceholder');
+  const items = document.getElementById('stepsItems');
+  if (cat === 'rule' || cat === 'personal') {
+    placeholder.style.display = '';
+    items.style.display = 'none';
+  } else {
+    placeholder.style.display = 'none';
+    items.style.display = '';
+  }
+  // 根据类别更新步骤名称
+  if (cat !== 'rule' && cat !== 'personal') {
+    const attr = 'data-' + (cat === 'year' ? 'year' : 'sem');
+    for (let i = 1; i <= 4; i++) {
+      const nav = document.getElementById('nav' + i);
+      const label = nav.getAttribute(attr) || '';
+      const nameEl = nav.querySelector('.step-name');
+      if (nameEl) nameEl.textContent = label;
+      nav.style.display = (cat === 'year' && i === 4 && !label) ? 'none' : '';
+    }
+  }
+  // 重置步骤进度
+  state.maxStep = 1;
+  // rule → 显示规则面板；personal → 显示个人计算面板；其他 → 使用说明
+  if (cat === 'rule') {
+    showPanel('rule');
+  } else if (cat === 'personal') {
+    showPanel('personal');
+  } else {
+    goStep(0);
+  }
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('fileName').textContent = file.name;
+  const formData = new FormData();
+  formData.append('file', file);
+  const dropZone = document.getElementById('dropZone');
+  dropZone.innerHTML = '<div class="loading"><div class="spinner"></div>解析中...</div>';
+  fetch('/api/upload', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      state.filepath = data.filepath;
+      state.filename = data.filename;
+      state.allSubjects = data.all_subjects || [];
+      state.evalSubjectNames = data.eval_subject_names || [];
+      state.hasQuantSheet = data.has_quant_sheet;
+      state.months = data.quant_months || [];
+      state.maxStep = Math.max(state.maxStep, 2);
+      const fi = document.getElementById('fileInfo');
+      fi.innerHTML = `
+        <div class="info-item"><div class="info-label">文件名</div><div class="info-value">${data.filename}</div></div>
+        <div class="info-item"><div class="info-label">学生人数</div><div class="info-value">${data.student_count}</div></div>
+        <div class="info-item"><div class="info-label">科目总数</div><div class="info-value">${state.allSubjects.length}</div></div>
+        <div class="info-item"><div class="info-label">量化表</div><div class="info-value">${data.has_quant_sheet ? '有' : '无'}</div></div>`;
+      fi.classList.remove('hidden');
+      document.getElementById('btnNext1').disabled = false;
+      dropZone.innerHTML = '<div class="upload-icon">✓</div><p>文件已加载，点击重新上传</p><p class="filename">' + data.filename + '</p>';
+      renderSubjects();
+      refreshNav(1);
+    })
+    .catch(err => {
+      document.getElementById('err1').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+      dropZone.innerHTML = '<div class="upload-icon">+</div><p>点击或拖拽 xlsx 文件到此处</p>';
+    });
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  document.getElementById('fileInput').files = e.dataTransfer.files;
+  handleFile(document.getElementById('fileInput'));
+});
+
+function renderSubjects() {
+  const list = document.getElementById('subjectList');
+  list.innerHTML = '';
+  state.allSubjects.forEach((s, i) => {
+    const checked = state.evalSubjectNames.includes(s.name);
+    const div = document.createElement('div');
+    div.className = 'subject-item' + (checked ? ' checked' : '');
+    const tag = s.category ? `<span class="subject-tag tag-${catClass(s.category)}">${s.category}</span>` : '';
+    div.innerHTML = `
+      <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleSubject(${i}, this.checked)">
+      <span class="subject-name">${s.name}${tag}</span>
+      <span class="subject-meta">${s.credit || '?'}学分</span>`;
+    div.onclick = function () {
+      const cb = this.querySelector('input');
+      cb.checked = !cb.checked;
+      toggleSubject(i, cb.checked);
+    };
+    list.appendChild(div);
+  });
+  updateCreditSummary();
+  renderSubjectPreview();
+}
+function catClass(cat) {
+  if (cat.includes('必修')) return 'must';
+  if (cat.includes('任选')) return 'elective';
+  if (cat.includes('限选')) return 'limited';
+  return 'elective';
+}
+function toggleSubject(idx, checked) {
+  document.querySelectorAll('.subject-item')[idx].classList.toggle('checked', checked);
+  updateCreditSummary();
+  renderSubjectPreview();
+}
+function updateCreditSummary() {
+  const checks = document.querySelectorAll('.subject-item input:checked');
+  let totalCredit = 0, count = 0;
+  checks.forEach(c => {
+    const idx = parseInt(c.getAttribute('onchange').match(/\d+/)[0]);
+    const s = state.allSubjects[idx];
+    if (s && s.credit) totalCredit += s.credit;
+    count++;
+  });
+  document.getElementById('creditSummary').innerHTML =
+    `已选 <b>${count}</b> 科，总学分 <b>${totalCredit.toFixed(1)}</b>（不含量化3学分）`;
+}
+let _previewTimer = null;
+function renderSubjectPreview() {
+  const box = document.getElementById('subjectPreview');
+  const selected = [];
+  document.querySelectorAll('.subject-item input:checked').forEach(c => {
+    const idx = parseInt(c.getAttribute('onchange').match(/\d+/)[0]);
+    const s = state.allSubjects[idx];
+    if (s) selected.push(s);
+  });
+  if (selected.length === 0) {
+    box.innerHTML = '<div style="text-align:center; padding:24px; color:#b07a4f; font-size:13px;">请勾选参评科目</div>';
+    return;
+  }
+  if (!state.filepath) return;
+  // 防抖：300ms 内多次触发只请求一次
+  if (_previewTimer) clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(() => {
+    box.innerHTML = '<div class="loading"><div class="spinner"></div>加载成绩表...</div>';
+    fetch('/api/preview_scores', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filepath: state.filepath,
+        subject_names: selected.map(s => s.name)
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        if (data.students.length === 0) {
+          box.innerHTML = '<div style="text-align:center; padding:24px; color:#b07a4f; font-size:13px;">未找到匹配数据</div>';
+          return;
+        }
+        const subjects = data.subjects;
+        let html = '<table><thead><tr><th>序号</th><th>学号</th><th>姓名</th>';
+        subjects.forEach(s => { html += `<th>${s}</th>`; });
+        html += '</tr></thead><tbody>';
+        data.students.forEach((st, i) => {
+          html += `<tr><td class="num">${i+1}</td><td>${st.id}</td><td>${st.name}</td>`;
+          subjects.forEach(s => {
+            const v = st.scores[s];
+            html += `<td class="num">${v !== null && v !== undefined ? v : '-'}</td>`;
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        box.innerHTML = html;
+      })
+      .catch(err => {
+        box.innerHTML = '<div class="error-msg">' + err.message + '</div>';
+      });
+  }, 300);
+}
+
+/* 切换面板显示 + 导航高亮（不改变 maxStep） */
+function showPanel(step) {
+  // 隐藏所有面板（主页 + 步骤0~4 + 学年综测面板 + 规则/个人面板）
+  document.getElementById('panelHome').classList.add('hidden');
+  for (let i = 0; i <= 4; i++) {
+    document.getElementById('panel' + i).classList.add('hidden');
+  }
+  for (let i = 1; i <= 3; i++) {
+    const p = document.getElementById('panelYear' + i);
+    if (p) p.classList.add('hidden');
+  }
+  const pr = document.getElementById('panelRule'); if (pr) pr.classList.add('hidden');
+  const pp = document.getElementById('panelPersonal'); if (pp) pp.classList.add('hidden');
+
+  // 显示对应面板
+  if (state.category === 'year' && step >= 1 && step <= 3) {
+    document.getElementById('panelYear' + step).classList.remove('hidden');
+  } else if (step === 'home') {
+    document.getElementById('panelHome').classList.remove('hidden');
+  } else if (step === 'rule') {
+    document.getElementById('panelRule').classList.remove('hidden');
+  } else if (step === 'personal') {
+    document.getElementById('panelPersonal').classList.remove('hidden');
+  } else {
+    document.getElementById('panel' + step).classList.remove('hidden');
+  }
+  // 使用说明：根据类别切换内容
+  const usageSem = document.getElementById('usageSemester');
+  const usageYr = document.getElementById('usageYear');
+  if (usageSem && usageYr) {
+    if (state.category === 'year') {
+      usageSem.style.display = 'none';
+      usageYr.style.display = '';
+    } else {
+      usageSem.style.display = '';
+      usageYr.style.display = 'none';
+    }
+  }
+  // 未选择类别或查看规则/个人计算时：显示占位，隐藏步骤小卡片
+  const placeholder = document.getElementById('stepsPlaceholder');
+  const items = document.getElementById('stepsItems');
+  const pText = document.getElementById('placeholderText');
+  const pDing = document.getElementById('placeholderDing');
+  if (state.category === null || state.category === 'rule' || state.category === 'personal') {
+    placeholder.style.display = '';
+    items.style.display = 'none';
+    // 个人计算时显示 ding.jpg，其他显示"请选择类别模式"
+    if (state.category === 'personal') {
+      pText.style.display = 'none';
+      pDing.style.display = '';
+    } else {
+      pText.style.display = '';
+      pDing.style.display = 'none';
+    }
+  } else {
+    placeholder.style.display = 'none';
+    items.style.display = '';
+  }
+  refreshNav(step);
+}
+/* 刷新左侧导航状态：active=当前，done=已过，locked=未解锁
+   使用说明(nav0) 永远可访问、不算"已完成"步骤 */
+function refreshNav(step) {
+  // 主页时：左侧所有类别和步骤都不显示 active
+  if (step === 'home') {
+    document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active'));
+  }
+  for (let i = 0; i <= 4; i++) {
+    const nav = document.getElementById('nav' + i);
+    nav.classList.remove('active', 'done', 'locked');
+    if (step === 'home') {
+      // 主页：全部无 active；第0步(使用说明)显示"请选择计算类别模式"提示，其余按 maxStep 判定
+      if (i === 0) {
+        // 主页时，使用说明步骤不显示 active，仅显示提示性灰色态
+        continue;
+      }
+      if (i < state.maxStep) nav.classList.add('done');
+      else if (i > state.maxStep) nav.classList.add('locked');
+      continue;
+    }
+    if (i === step) {
+      nav.classList.add('active');
+      continue;
+    }
+    if (i === 0) continue;          // 使用说明非当前：普通可点击态，无 done/locked
+    if (i < step) nav.classList.add('done');
+    if (i > state.maxStep) nav.classList.add('locked');
+  }
+}
+/* 返回主页 */
+function goHome() { showPanel('home'); }
+/* 侧边栏点击：使用说明随时可看；其余步骤仅可回退/停留到已解锁的 */
+function goStep(step) {
+  if (step !== 0 && step > state.maxStep) return;  // 未解锁，忽略
+  showPanel(step);
+  if (state.category !== 'year' && step === 3) loadQuantPreview();
+}
+/* 「下一步」按钮：前进并解锁（使用说明不算进度步骤） */
+function advanceTo(step) {
+  if (step >= 1) state.maxStep = Math.max(state.maxStep, step);
+  showPanel(step);
+  if (state.category !== 'year' && step === 3) loadQuantPreview();
+}
+
+function loadQuantPreview() {
+  if (!state.hasQuantSheet) {
+    document.getElementById('quantPreview').innerHTML = '<p style="color:#a96a3d;">未检测到量化表，可直接开始计算</p>';
+    return;
+  }
+  document.getElementById('quantPreview').innerHTML = '<div class="loading"><div class="spinner"></div>加载量化数据...</div>';
+  fetch('/api/preview_quant', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filepath: state.filepath })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      const months = data.months || [];
+      const quantFmt = v => Number(v).toFixed(2).replace(/\.?0+$/, '');
+      let html = '<div class="table-wrap"><table><thead><tr>';
+      html += '<th>排名</th><th>学号</th><th>姓名</th><th>二课量化</th><th>最终二课</th>';
+      months.forEach(m => html += `<th>${m}</th>`);
+      html += '<th>基础管理</th><th>量化最终值</th></tr></thead><tbody>';
+      data.students.forEach((s, i) => {
+        html += `<tr><td class="num">${i+1}</td><td>${s.id}</td><td>${s.name}</td><td class="num">${quantFmt(s.second_class_raw)}</td><td class="num">${quantFmt(s.second_class_final)}</td>`;
+        months.forEach(m => html += `<td class="num">${quantFmt(s.deductions[m] || 0)}</td>`);
+        html += `<td class="num">${quantFmt(s.base_management)}</td><td class="num"><b>${quantFmt(s.quant_final)}</b></td></tr>`;
+      });
+      html += '</tbody></table></div>';
+      document.getElementById('quantPreview').innerHTML = html;
+    })
+    .catch(err => {
+      document.getElementById('quantPreview').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+    });
+}
+
+function doCalc() {
+  const selected = [];
+  document.querySelectorAll('.subject-item input:checked').forEach(c => {
+    const idx = parseInt(c.getAttribute('onchange').match(/\d+/)[0]);
+    selected.push(state.allSubjects[idx]);
+  });
+  if (selected.length === 0) { alert('请至少选择一个参评科目'); return; }
+
+  state.maxStep = Math.max(state.maxStep, 4);
+  document.getElementById('resultTables').innerHTML = '<div class="loading"><div class="spinner"></div>计算中...</div>';
+  showPanel(4);
+
+  fetch('/api/calc', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filepath: state.filepath, selected_subjects: selected })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      state.resultData = data;
+      window._resultData = data;
+      refreshNav(4);
+      switchTab('study', document.querySelector('.tab-btn'));
+    })
+    .catch(err => {
+      document.getElementById('resultTables').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+    });
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const data = window._resultData;
+  if (!data) return;
+  const container = document.getElementById('resultTables');
+  // 百分比：2 位小数
+  const pct = v => (v * 100).toFixed(2) + '%';
+  // 学习/综测成绩：3 位小数
+  const num3 = v => Number(v).toFixed(3);
+  // 量化成绩：整数无小数，有小数则 1-2 位
+  const quantFmt = v => Number(v).toFixed(2).replace(/\.?0+$/, '');
+  let html = '<div class="table-wrap"><table><thead><tr>';
+
+  if (name === 'study') {
+    const rows = data.backup.slice().sort((a, b) => b.study_score - a.study_score);
+    html += '<th>排名</th><th>学号</th><th>姓名</th><th>学习成绩</th><th>名次</th><th>百分比</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      html += `<tr><td class="num">${r.study_rank}</td><td>${r.id}</td><td>${r.name}</td>
+        <td class="num">${num3(r.study_score)}</td><td class="num">${r.study_rank}</td><td class="num">${pct(r.study_percent)}</td></tr>`;
+    });
+  } else if (name === 'quant') {
+    const rows = data.quant.slice().sort((a, b) => b.quant_final - a.quant_final);
+    html += '<th>排名</th><th>学号</th><th>姓名</th><th>二课量化</th><th>最终二课</th><th>基础管理</th><th>量化成绩</th><th>名次</th><th>百分比</th></tr></thead><tbody>';
+    const n = rows.length;
+    rows.forEach(q => {
+      const p = n ? (q.quant_rank / n) : 0;
+      html += `<tr><td class="num">${q.quant_rank}</td><td>${q.id}</td><td>${q.name}</td>
+        <td class="num">${quantFmt(q.second_class_raw)}</td><td class="num">${quantFmt(q.second_class_final)}</td>
+        <td class="num">${quantFmt(q.base_management)}</td>
+        <td class="num"><b>${quantFmt(q.quant_final)}</b></td><td class="num">${q.quant_rank}</td><td class="num">${(p*100).toFixed(2)}%</td></tr>`;
+    });
+  } else {
+    const rows = data.backup.slice().sort((a, b) => b.composite_score - a.composite_score);
+    html += '<th>排名</th><th>学号</th><th>姓名</th>'
+      + '<th>综测成绩<br>(不含量化)</th><th>名次</th><th>百分比</th>'
+      + '<th>综测成绩<br>(含量化)</th><th>名次</th><th>百分比</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      html += `<tr><td class="num">${r.composite_rank}</td><td>${r.id}</td><td>${r.name}</td>
+        <td class="num">${num3(r.study_score)}</td><td class="num">${r.study_rank}</td><td class="num">${pct(r.study_percent)}</td>
+        <td class="num"><b>${num3(r.composite_score)}</b></td><td class="num">${r.composite_rank}</td><td class="num">${pct(r.composite_percent)}</td></tr>`;
+    });
+  }
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function doExport() {
+  const selected = [];
+  document.querySelectorAll('.subject-item input:checked').forEach(c => {
+    const idx = parseInt(c.getAttribute('onchange').match(/\d+/)[0]);
+    selected.push(state.allSubjects[idx]);
+  });
+  document.getElementById('exportMsg').innerHTML = '<div class="loading"><div class="spinner"></div>生成 Excel...</div>';
+  fetch('/api/export', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filepath: state.filepath, selected_subjects: selected, class_name: state.className || '' })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      document.getElementById('exportMsg').innerHTML =
+        '<div class="success-msg">导出成功！<a href="/api/download?filename=' + encodeURIComponent(data.filename) + '" target="_blank" style="color:#e0763a;font-weight:600;">点击下载 ' + data.filename + '</a></div>';
+    })
+    .catch(err => {
+      document.getElementById('exportMsg').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+    });
+}
+
+// ==================== 学年综测逻辑 ====================
+state.yearFile1 = null;
+state.yearFile2 = null;
+state.yearSessionId = null;
+state.yearFailed = [];
+state.yearResultData = null;
+
+function onYearFilePick(slot, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (slot === 1) {
+    state.yearFile1 = file;
+    document.getElementById('yearFileName1').textContent = file.name;
+  } else {
+    state.yearFile2 = file;
+    document.getElementById('yearFileName2').textContent = file.name;
+  }
+  // 两个文件都选了才启用按钮
+  document.getElementById('btnYearNext1').disabled = !(state.yearFile1 && state.yearFile2);
+}
+
+function doYearUpload() {
+  if (!state.yearFile1 || !state.yearFile2) return;
+  document.getElementById('yearInfo').innerHTML = '<div class="loading"><div class="spinner"></div>解析中...</div>';
+  const formData = new FormData();
+  formData.append('files', state.yearFile1);
+  formData.append('files', state.yearFile2);
+  fetch('/api/year/upload', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      state.yearSessionId = data.session_id;
+      state.yearFailed = data.failed || [];
+      document.getElementById('yearInfo').innerHTML = `
+        <div class="info-item"><div class="info-label">第一学期</div><div class="info-value">${data.s1_filename}（${data.s1_student_count}人）</div></div>
+        <div class="info-item"><div class="info-label">第二学期</div><div class="info-value">${data.s2_filename}（${data.s2_student_count}人）</div></div>
+        <div class="info-item"><div class="info-label">挂科总数</div><div class="info-value">${state.yearFailed.length}</div></div>`;
+      renderFailedList();
+      state.maxStep = Math.max(state.maxStep, 2);
+      refreshNav(1);
+      // 自动进入第二步
+      advanceTo(2);
+    })
+    .catch(err => {
+      document.getElementById('yearErr1').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+      document.getElementById('yearInfo').innerHTML = '';
+    });
+}
+
+function renderFailedList() {
+  const box = document.getElementById('failedList');
+  if (state.yearFailed.length === 0) {
+    box.innerHTML = '<div style="text-align:center; padding:24px; color:#b07a4f; font-size:13px;">无挂科科目，可直接开始计算</div>';
+    return;
+  }
+  // 按学生分组
+  const groups = {};
+  state.yearFailed.forEach((f, i) => {
+    const gKey = f.student_id;
+    if (!groups[gKey]) groups[gKey] = { name: f.student_name, id: f.student_id, items: [] };
+    groups[gKey].items.push({ ...f, idx: i });
+  });
+  const sorted = Object.values(groups).sort((a, b) => b.items.length - a.items.length);
+  let html = '';
+  sorted.forEach(g => {
+    html += `<div class="failed-group">
+      <div class="failed-group-head">
+        <span class="failed-group-name">${g.name}</span>
+        <span class="failed-group-id">${g.id}</span>
+        <span class="failed-group-count">${g.items.length}科挂科</span>
+      </div>
+      <div class="failed-group-body">`;
+    g.items.forEach(item => {
+      const key = `${item.student_id}||${item.course}`;
+      html += `<div class="failed-item" id="failed${item.idx}" onclick="toggleMakeup(${item.idx})">
+        <input type="checkbox" id="mk${item.idx}" data-key="${key}">
+        <span class="sem-tag">${item.semester === 1 ? 'S1' : 'S2'}</span>
+        <span class="course-info">${item.course}</span>
+        <span class="score-info">${item.score}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  box.innerHTML = html;
+}
+
+function toggleMakeup(idx) {
+  const item = document.getElementById('failed' + idx);
+  const cb = document.getElementById('mk' + idx);
+  cb.checked = !cb.checked;
+  item.classList.toggle('checked', cb.checked);
+}
+
+function doYearCalc() {
+  const makeupPassed = [];
+  document.querySelectorAll('.failed-item input:checked').forEach(c => {
+    makeupPassed.push(c.getAttribute('data-key'));
+  });
+  document.getElementById('yearResultTables').innerHTML = '<div class="loading"><div class="spinner"></div>计算中...</div>';
+  state.maxStep = Math.max(state.maxStep, 3);
+  showPanel(3);
+  fetch('/api/year/calc', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: state.yearSessionId, makeup_passed: makeupPassed })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      state.yearResultData = data;
+      renderYearResults(data);
+      refreshNav(3);
+    })
+    .catch(err => {
+      document.getElementById('yearResultTables').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+    });
+}
+
+function renderYearResults(data) {
+  const num3 = v => Number(v).toFixed(3);
+  const pct = v => (v * 100).toFixed(2) + '%';
+  let html = '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>排名</th><th>学号</th><th>姓名</th><th>学年综测成绩</th><th>名次</th><th>百分比</th><th>学年学习成绩</th><th>名次</th><th>百分比</th></tr></thead><tbody>';
+  data.students.forEach(s => {
+    html += `<tr><td class="num">${s.composite_rank}</td><td>${s.id}</td><td>${s.name}</td>
+      <td class="num"><b>${num3(s.yearly_avg_with_quant)}</b></td><td class="num">${s.composite_rank}</td><td class="num">${pct(s.composite_percent)}</td>
+      <td class="num">${num3(s.yearly_avg_no_quant)}</td><td class="num">${s.study_rank}</td><td class="num">${pct(s.study_percent)}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('yearResultTables').innerHTML = html;
+}
+
+function doYearExport() {
+  document.getElementById('yearExportMsg').innerHTML = '<div class="loading"><div class="spinner"></div>生成 Excel...</div>';
+  fetch('/api/year/export', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: state.yearSessionId, class_name: state.yearClassName || '' })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      document.getElementById('yearExportMsg').innerHTML =
+        '<div class="success-msg">导出成功！<a href="/api/download?filename=' + encodeURIComponent(data.filename) + '" target="_blank" style="color:#e0763a;font-weight:600;">点击下载 ' + data.filename + '</a></div>';
+    })
+    .catch(err => {
+      document.getElementById('yearExportMsg').innerHTML = '<div class="error-msg">' + err.message + '</div>';
+    });
+}
+
+// ==================== 个人计算逻辑 ====================
+let personalSubjectCount = 0;
+function addPersonalSubject(name = '', score = '', credit = '') {
+  personalSubjectCount++;
+  const container = document.getElementById('personalSubjects');
+  const row = document.createElement('div');
+  row.className = 'personal-subject-row';
+  row.id = 'psRow' + personalSubjectCount;
+  row.innerHTML = `
+    <input type="text" placeholder="科目名（可选）" value="${name}">
+    <input type="number" placeholder="成绩" value="${score}" step="0.5" min="0" max="100">
+    <input type="number" placeholder="学分" value="${credit}" step="0.5" min="0" max="10">
+    <button class="del-btn" onclick="delPersonalSubject(${personalSubjectCount})">×</button>`;
+  container.appendChild(row);
+}
+function delPersonalSubject(id) {
+  const row = document.getElementById('psRow' + id);
+  if (row) row.remove();
+}
+
+function calcPersonal() {
+  // 收集科目数据
+  const subjects = [];
+  document.querySelectorAll('.personal-subject-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const score = parseFloat(inputs[1].value);
+    const credit = parseFloat(inputs[2].value);
+    if (!isNaN(score) && !isNaN(credit) && credit > 0) {
+      subjects.push({ name: inputs[0].value || '未命名', score, credit });
+    }
+  });
+  if (subjects.length === 0) {
+    document.getElementById('personalResult').innerHTML = '<div class="error-msg" style="margin:0;">请至少添加一门科目（含成绩和学分）</div>';
+    document.getElementById('personalResult').classList.add('show');
+    return;
+  }
+
+  // 量化数据
+  const scRaw = parseFloat(document.getElementById('personalScRaw').value) || 0;
+  const baseMgmt = parseFloat(document.getElementById('personalBaseMgmt').value) || 0;
+  const scFinal = Math.min(scRaw, 100);
+  const quantFinal = (scFinal + baseMgmt) / 2;
+
+  // 计算绩点
+  let totalPoint = 0;
+  let totalCredits = 0;
+  const subjectDetails = [];
+  subjects.forEach(s => {
+    let gp;
+    if (s.score < 60) gp = 0;
+    else gp = (s.score - 50) / 10 * s.credit;
+    totalPoint += gp;
+    totalCredits += s.credit;
+    subjectDetails.push({ ...s, gp });
+  });
+
+  // 量化绩点
+  let quantGP = 0;
+  if (quantFinal >= 60) quantGP = (quantFinal - 50) / 10 * 3;
+  const totalWithQuant = totalPoint + quantGP;
+  const totalCreditsWithQuant = totalCredits + 3;
+
+  const avgNoQuant = totalCredits > 0 ? totalPoint / totalCredits : 0;
+  const avgWithQuant = totalCreditsWithQuant > 0 ? totalWithQuant / totalCreditsWithQuant : 0;
+
+  // 渲染结果
+  const num3 = v => v.toFixed(3);
+  let html = '<div class="personal-result-row"><span class="personal-result-label">科目总学分</span><span class="personal-result-value" style="font-size:15px;">' + totalCredits.toFixed(1) + '</span></div>';
+  subjectDetails.forEach(s => {
+    html += `<div class="personal-result-row"><span class="personal-result-label">${s.name}（${s.credit}学分，${s.score}分）</span><span class="personal-result-value" style="font-size:14px;">绩点 ${s.gp.toFixed(2)}</span></div>`;
+  });
+  html += `<div class="personal-result-row"><span class="personal-result-label">量化最终分（3学分）</span><span class="personal-result-value" style="font-size:14px;">${quantFinal.toFixed(2)} → 绩点 ${quantGP.toFixed(2)}</span></div>`;
+  html += '<div style="border-top:2px solid rgba(224,118,58,0.3); margin:8px 0;"></div>';
+  html += `<div class="personal-result-row"><span class="personal-result-label">学习成绩（不含量化）</span><span class="personal-result-value">${num3(avgNoQuant)}</span></div>`;
+  html += `<div class="personal-result-row"><span class="personal-result-label">综测成绩（含量化）</span><span class="personal-result-value">${num3(avgWithQuant)}</span></div>`;
+  document.getElementById('personalResult').innerHTML = html;
+  document.getElementById('personalResult').classList.add('show');
+}
+
+// 初始化个人计算：默认添加3行
+(function initPersonal() {
+  addPersonalSubject();
+  addPersonalSubject();
+  addPersonalSubject();
+})();
+</script>
+</body>
+</html>
