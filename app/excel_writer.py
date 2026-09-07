@@ -55,10 +55,11 @@ def _apply_header(cell):
     cell.border = ALL_BORDER
 
 
-def _apply_data(cell, fmt=None, zebra=False):
+def _apply_data(cell, fmt=None, zebra=False, no_fill=False):
     cell.font = DATA_FONT
     cell.alignment = DATA_ALIGN
-    cell.fill = ZEBRA_FILL if zebra else DATA_FILL
+    if not no_fill:
+        cell.fill = ZEBRA_FILL if zebra else DATA_FILL
     cell.border = ALL_BORDER
     if fmt:
         cell.number_format = fmt
@@ -437,17 +438,17 @@ def write_result(workbook_path, result, class_name='综测', source_path=None):
         for c in range(1, last4 + 1):
             cc = ws4.cell(r, c)
             if c == 1:
-                _apply_data(cc, FMT_INT, zebra)
+                _apply_data(cc, FMT_INT, zebra, no_fill=True)
             elif c in (5, 8, 11):
-                _apply_data(cc, FMT_INT, zebra)
+                _apply_data(cc, FMT_INT, zebra, no_fill=True)
             elif c == 4:
-                _apply_data(cc, FMT_NUM3, zebra)         # 学习成绩：0.000
+                _apply_data(cc, FMT_NUM3, zebra, no_fill=True)         # 学习成绩：0.000
             elif c == 7:
-                _apply_data(cc, FMT_QUANT, zebra)        # 量化成绩：0.##
+                _apply_data(cc, FMT_QUANT, zebra, no_fill=True)        # 量化成绩：0.##
             elif c == 10:
-                _apply_data(cc, FMT_NUM3, zebra)         # 综测成绩：0.000
+                _apply_data(cc, FMT_NUM3, zebra, no_fill=True)         # 综测成绩：0.000
             else:
-                _apply_data(cc, FMT_PCT, zebra)
+                _apply_data(cc, FMT_PCT, zebra, no_fill=True)
 
     w4 = {'A': 6, 'B': 13, 'C': 10,
           'D': 12, 'E': 10, 'F': 11,

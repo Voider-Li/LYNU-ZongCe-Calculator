@@ -50,10 +50,11 @@ FMT_NUM3 = '0.000'
 FMT_PCT = '0.00%'
 
 
-def _apply_data(cell, fmt=None, zebra=False):
+def _apply_data(cell, fmt=None, zebra=False, no_fill=False):
     cell.font = DATA_FONT
     cell.alignment = DATA_ALIGN
-    cell.fill = ZEBRA_FILL if zebra else DATA_FILL
+    if not no_fill:
+        cell.fill = ZEBRA_FILL if zebra else DATA_FILL
     cell.border = ALL_BORDER
     if fmt:
         cell.number_format = fmt
@@ -402,14 +403,15 @@ def write_year_result(workbook_path, result, class_name='', s1_path=None, s2_pat
             key = f"{r['id']}||{course_name}"
             is_makeup = key in makeup_passed
 
-            # 绩点公式: =(分数-50)/10*学分，挂科则0，空值则0
-            formula = f'=IF(OR({score_cell_ref}<60,{score_cell_ref}=""),0,({score_cell_ref}-50)/10*{credit})'
-            cc = ws.cell(row, col, formula)
-            _apply_data(cc, zebra=zebra)
-
-            # 补考通过：黄色填充
+            # 绩点: 补考通过直接写1；否则用公式 =(分数-50)/10*学分，挂科则0，空值则0
             if is_makeup:
+                cc = ws.cell(row, col, 1)
+                _apply_data(cc, zebra=zebra)
                 cc.fill = YELLOW_FILL
+            else:
+                formula = f'=IF(OR({score_cell_ref}<60,{score_cell_ref}=""),0,({score_cell_ref}-50)/10*{credit})'
+                cc = ws.cell(row, col, formula)
+                _apply_data(cc, zebra=zebra)
 
         # 量化绩点（第一学期）
         s1_qp = r.get('s1_quant_point')
@@ -440,13 +442,15 @@ def write_year_result(workbook_path, result, class_name='', s1_path=None, s2_pat
             key = f"{r['id']}||{course_name}"
             is_makeup = key in makeup_passed
 
-            formula = f'=IF(OR({score_cell_ref}<60,{score_cell_ref}=""),0,({score_cell_ref}-50)/10*{credit})'
-            cc = ws.cell(row, col, formula)
-            _apply_data(cc, zebra=zebra)
-
-            # 补考通过：黄色填充
+            # 绩点: 补考通过直接写1；否则用公式
             if is_makeup:
+                cc = ws.cell(row, col, 1)
+                _apply_data(cc, zebra=zebra)
                 cc.fill = YELLOW_FILL
+            else:
+                formula = f'=IF(OR({score_cell_ref}<60,{score_cell_ref}=""),0,({score_cell_ref}-50)/10*{credit})'
+                cc = ws.cell(row, col, formula)
+                _apply_data(cc, zebra=zebra)
 
         # 量化绩点（第二学期）
         s2_qp = r.get('s2_quant_point')
@@ -549,59 +553,58 @@ def write_year_result(workbook_path, result, class_name='', s1_path=None, s2_pat
         row = i + 1
         ws2.row_dimensions[row].height = 20
         zebra = (i % 2 == 1)
-        fill = ZEBRA_FILL if zebra else DATA_FILL
 
         # A: 学号
         cc = ws2.cell(row, b_col_id, str(r['id']))
         cc.font = backup_font
-        _apply_data(cc, fmt=FMT_INT, zebra=zebra)
+        _apply_data(cc, fmt=FMT_INT, zebra=zebra, no_fill=True)
 
         # B: 姓名
         cc = ws2.cell(row, b_col_name, r['name'])
         cc.font = backup_font
-        _apply_data(cc, zebra=zebra)
+        _apply_data(cc, zebra=zebra, no_fill=True)
 
         # C: 综测含量量（保留3位小数）
         cc = ws2.cell(row, b_col_qcgp, round(r['yearly_avg_with_quant'], 3))
         cc.font = backup_font_bold
-        _apply_data(cc, fmt=FMT_NUM3, zebra=zebra)
+        _apply_data(cc, fmt=FMT_NUM3, zebra=zebra, no_fill=True)
 
         # D: 排名（RANK 公式）
         qc_gp_letter = get_column_letter(b_col_qcgp)
         rank_letter = get_column_letter(b_col_qcrank)
         cc = ws2.cell(row, b_col_qcrank, f'=RANK({qc_gp_letter}{row},${qc_gp_letter}$1:${qc_gp_letter}${n},0)')
         cc.font = backup_font
-        _apply_data(cc, fmt=FMT_INT, zebra=zebra)
+        _apply_data(cc, fmt=FMT_INT, zebra=zebra, no_fill=True)
 
         # E: =排名/总人数（百分比格式）
         pct_letter = get_column_letter(b_col_qcpct)
         cc = ws2.cell(row, b_col_qcpct, f'={rank_letter}{row}/{n}')
         cc.font = backup_font
-        _apply_data(cc, fmt=FMT_PCT, zebra=zebra)
+        _apply_data(cc, fmt=FMT_PCT, zebra=zebra, no_fill=True)
 
         # F, G, H: 空白占位列
         for c in range(b_col_blank1, b_col_blank1 + 3):
             cc = ws2.cell(row, c)
             cc.font = backup_font
-            _apply_data(cc, zebra=zebra)
+            _apply_data(cc, zebra=zebra, no_fill=True)
 
         # I: 学习不含量量（保留3位小数）
         cc = ws2.cell(row, b_col_studyavg, round(r['yearly_avg_no_quant'], 3))
         cc.font = backup_font
-        _apply_data(cc, fmt=FMT_NUM3, zebra=zebra)
+        _apply_data(cc, fmt=FMT_NUM3, zebra=zebra, no_fill=True)
 
         # J: 排名（RANK 公式）
         study_avg_letter = get_column_letter(b_col_studyavg)
         study_rank_letter = get_column_letter(b_col_study_rank)
         cc = ws2.cell(row, b_col_study_rank, f'=RANK({study_avg_letter}{row},${study_avg_letter}$1:${study_avg_letter}${n},0)')
         cc.font = backup_font
-        _apply_data(cc, fmt=FMT_INT, zebra=zebra)
+        _apply_data(cc, fmt=FMT_INT, zebra=zebra, no_fill=True)
 
         # K: =排名/总人数（百分比格式）
         study_pct_letter = get_column_letter(b_col_studypct)
         cc = ws2.cell(row, b_col_studypct, f'={study_rank_letter}{row}/{n}')
         cc.font = backup_font
-        _apply_data(cc, fmt=FMT_PCT, zebra=zebra)
+        _apply_data(cc, fmt=FMT_PCT, zebra=zebra, no_fill=True)
 
     ws2.column_dimensions['A'].width = 14.5
     for c in range(2, b_col_studypct + 1):

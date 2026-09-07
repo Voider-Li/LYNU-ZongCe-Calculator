@@ -121,7 +121,13 @@ def calc_yearly(semester1_data, semester2_data, makeup_passed):
     makeup_passed: list of "student_id||course_name" 字符串，
                    表示该学生该科补考通过 → 绩点 = 1
     """
-    makeup_set = set(makeup_passed)
+    # 按学号分组补考通过科目，便于快速查找
+    makeup_by_sid = {}
+    for key in makeup_passed:
+        parts = key.split('||', 1)  # maxsplit=1，防止课程名含'||'被截断
+        if len(parts) == 2:
+            sid_key, course = parts[0], parts[1]
+            makeup_by_sid.setdefault(sid_key, set()).add(course)
 
     s1_total_credits = semester1_data['total_credits']
     s1_total_credits_with_quant = semester1_data['total_credits_with_quant']
@@ -151,10 +157,9 @@ def calc_yearly(semester1_data, semester2_data, makeup_passed):
         s2_subject_points = dict(s2['subject_points'])
 
         # 补考通过：绩点改为 1
-        for key in makeup_set:
-            parts = key.split('||')
-            if len(parts) == 2 and parts[0] == sid:
-                course = parts[1]
+        makeup_courses = makeup_by_sid.get(sid)
+        if makeup_courses:
+            for course in makeup_courses:
                 if course in s1_subject_points:
                     s1_subject_points[course] = 1
                 if course in s2_subject_points:

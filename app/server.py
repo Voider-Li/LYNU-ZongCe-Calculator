@@ -35,21 +35,26 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # ---------- 心跳：浏览器关闭后自动退出进程 ----------
 _last_ping = time.time()
 _ping_lock = threading.Lock()
-_HEARTBEAT_TIMEOUT = 8  # 秒：超过此时间无心跳则退出
+_HEARTBEAT_TIMEOUT = 120  # 秒：超过此时间无心跳则退出
+
+
+@app.before_request
+def _touch_heartbeat():
+    """任何请求都刷新心跳，确保用户操作期间服务不会退出"""
+    global _last_ping
+    with _ping_lock:
+        _last_ping = time.time()
 
 
 @app.route('/api/ping')
 def api_ping():
-    global _last_ping
-    with _ping_lock:
-        _last_ping = time.time()
     return jsonify({'ok': True})
 
 
 def _heartbeat_watcher():
     """后台线程：浏览器关闭（无心跳）后自动结束进程"""
     while True:
-        time.sleep(2)
+        time.sleep(5)
         with _ping_lock:
             idle = time.time() - _last_ping
         if idle > _HEARTBEAT_TIMEOUT:
@@ -466,4 +471,4 @@ if __name__ == '__main__':
         threading.Thread(target=_open_browser, daemon=True).start()
         start_heartbeat()  # 浏览器关闭后自动退出（仅打包模式）
 
-    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
+    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False, threaded=True)
