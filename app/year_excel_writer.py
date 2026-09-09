@@ -536,21 +536,48 @@ def write_year_result(workbook_path, result, class_name='', s1_path=None, s2_pat
         bottom=Side(style='thin', color='B4C7E7')
     )
 
-    # 列定义（参考旧版Sheet1）
+    # 列定义：学号 | 姓名 | 学习成绩(3列) | 空3列 | 综测含量化(3列)
     b_col_id = 1           # A: 学号
     b_col_name = 2         # B: 姓名
-    b_col_qcgp = 3         # C: 综测含量量
-    b_col_qcrank = 4       # D: 排名
-    b_col_qcpct = 5        # E: =排名/N%
+    b_col_studyavg = 3     # C: 学习不含量量
+    b_col_study_rank = 4   # D: 学习排名
+    b_col_studypct = 5     # E: 学习百分比
     b_col_blank1 = 6       # F: 空
     b_col_blank2 = 7       # G: 空
     b_col_blank3 = 8       # H: 空
-    b_col_studyavg = 9     # I: 学习不含量量
-    b_col_study_rank = 10  # J: 排名
-    b_col_studypct = 11    # K: =排名/N%
+    b_col_qcgp = 9         # I: 综测含量量
+    b_col_qcrank = 10      # J: 综测排名
+    b_col_qcpct = 11       # K: 综测百分比
+    b_last_col = 11
+
+    # ---- 第1行：标题 ----
+    ws2.merge_cells(start_row=1, start_column=1, end_row=1, end_column=b_last_col)
+    title_cell = ws2.cell(1, 1, f'{class_name} 学年综测备查表')
+    title_cell.font = Font(name=FONT_FAMILY, size=16, bold=True, color='1F4E79')
+    title_cell.alignment = Alignment(horizontal='center', vertical='center')
+    title_cell.fill = PatternFill(fill_type='solid', start_color='D9E1F2', end_color='D9E1F2')
+    title_cell.border = all_border2
+    ws2.row_dimensions[1].height = 30
+
+    # ---- 第2行：列名表头 ----
+    header_names = ['学号', '姓名', '学习成绩', '名次', '百分比', '', '', '', '综测成绩', '名次', '百分比']
+    header_font = Font(name=FONT_FAMILY, size=11, bold=True, color='FFFFFFFF')
+    header_fill = PatternFill(fill_type='solid', start_color='4472C4', end_color='4472C4')
+    header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    for c, name in enumerate(header_names, 1):
+        cc = ws2.cell(2, c, name)
+        cc.font = header_font
+        cc.alignment = header_align
+        cc.fill = header_fill
+        cc.border = all_border2
+    ws2.row_dimensions[2].height = 22
+
+    # ---- 数据行（从第3行开始） ----
+    data_start_row = 3
+    data_end_row = data_start_row + n - 1
 
     for i, r in enumerate(backup_sorted):
-        row = i + 1
+        row = i + data_start_row
         ws2.row_dimensions[row].height = 20
         zebra = (i % 2 == 1)
 
@@ -564,21 +591,20 @@ def write_year_result(workbook_path, result, class_name='', s1_path=None, s2_pat
         cc.font = backup_font
         _apply_data(cc, zebra=zebra, no_fill=True)
 
-        # C: 综测含量量（保留3位小数）
-        cc = ws2.cell(row, b_col_qcgp, round(r['yearly_avg_with_quant'], 3))
-        cc.font = backup_font_bold
+        # C: 学习不含量量（保留3位小数）
+        cc = ws2.cell(row, b_col_studyavg, round(r['yearly_avg_no_quant'], 3))
+        cc.font = backup_font
         _apply_data(cc, fmt=FMT_NUM3, zebra=zebra, no_fill=True)
 
-        # D: 排名（RANK 公式）
-        qc_gp_letter = get_column_letter(b_col_qcgp)
-        rank_letter = get_column_letter(b_col_qcrank)
-        cc = ws2.cell(row, b_col_qcrank, f'=RANK({qc_gp_letter}{row},${qc_gp_letter}$1:${qc_gp_letter}${n},0)')
+        # D: 学习排名（RANK 公式）
+        study_avg_letter = get_column_letter(b_col_studyavg)
+        study_rank_letter = get_column_letter(b_col_study_rank)
+        cc = ws2.cell(row, b_col_study_rank, f'=RANK({study_avg_letter}{row},${study_avg_letter}${data_start_row}:${study_avg_letter}${data_end_row},0)')
         cc.font = backup_font
         _apply_data(cc, fmt=FMT_INT, zebra=zebra, no_fill=True)
 
-        # E: =排名/总人数（百分比格式）
-        pct_letter = get_column_letter(b_col_qcpct)
-        cc = ws2.cell(row, b_col_qcpct, f'={rank_letter}{row}/{n}')
+        # E: 学习百分比
+        cc = ws2.cell(row, b_col_studypct, f'={study_rank_letter}{row}/{n}')
         cc.font = backup_font
         _apply_data(cc, fmt=FMT_PCT, zebra=zebra, no_fill=True)
 
@@ -588,30 +614,28 @@ def write_year_result(workbook_path, result, class_name='', s1_path=None, s2_pat
             cc.font = backup_font
             _apply_data(cc, zebra=zebra, no_fill=True)
 
-        # I: 学习不含量量（保留3位小数）
-        cc = ws2.cell(row, b_col_studyavg, round(r['yearly_avg_no_quant'], 3))
-        cc.font = backup_font
+        # I: 综测含量量（保留3位小数）
+        cc = ws2.cell(row, b_col_qcgp, round(r['yearly_avg_with_quant'], 3))
+        cc.font = backup_font_bold
         _apply_data(cc, fmt=FMT_NUM3, zebra=zebra, no_fill=True)
 
-        # J: 排名（RANK 公式）
-        study_avg_letter = get_column_letter(b_col_studyavg)
-        study_rank_letter = get_column_letter(b_col_study_rank)
-        cc = ws2.cell(row, b_col_study_rank, f'=RANK({study_avg_letter}{row},${study_avg_letter}$1:${study_avg_letter}${n},0)')
+        # J: 综测排名（RANK 公式）
+        qc_gp_letter = get_column_letter(b_col_qcgp)
+        rank_letter = get_column_letter(b_col_qcrank)
+        cc = ws2.cell(row, b_col_qcrank, f'=RANK({qc_gp_letter}{row},${qc_gp_letter}${data_start_row}:${qc_gp_letter}${data_end_row},0)')
         cc.font = backup_font
         _apply_data(cc, fmt=FMT_INT, zebra=zebra, no_fill=True)
 
-        # K: =排名/总人数（百分比格式）
-        study_pct_letter = get_column_letter(b_col_studypct)
-        cc = ws2.cell(row, b_col_studypct, f'={study_rank_letter}{row}/{n}')
+        # K: 综测百分比
+        cc = ws2.cell(row, b_col_qcpct, f'={rank_letter}{row}/{n}')
         cc.font = backup_font
         _apply_data(cc, fmt=FMT_PCT, zebra=zebra, no_fill=True)
 
     ws2.column_dimensions['A'].width = 14.5
-    for c in range(2, b_col_studypct + 1):
+    for c in range(2, b_last_col + 1):
         ws2.column_dimensions[get_column_letter(c)].width = 10
-    ws2.column_dimensions[get_column_letter(b_col_qcpct)].width = 13
-    ws2.column_dimensions[get_column_letter(b_col_study_rank)].width = 13
     ws2.column_dimensions[get_column_letter(b_col_studypct)].width = 13
+    ws2.column_dimensions[get_column_letter(b_col_qcpct)].width = 13
 
     wb.save(workbook_path)
     return workbook_path
